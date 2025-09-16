@@ -1,0 +1,24 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# Data & outputs
+data/*.csv
+!data/.keep
+
+reports/*.html
+reports/*.pdf
+reports/*.png
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
