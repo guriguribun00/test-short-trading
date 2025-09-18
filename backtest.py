@@ -28,12 +28,13 @@ if __name__ == "__main__":
         import os
         import matplotlib.pyplot as plt
 
-        df = load_price_data()
+        df = load_price_data("data/price.csv")
         df = calc_macd(df)
         df = calc_sma(df, 200)
 
         # 1) 크로스 신호 추출
         signals = macd_cross_signals(df)
+        combo   = macd_with_ma_filter(df)
 
         # 2) reports 폴더 생성
         os.makedirs("reports", exist_ok=True)
@@ -67,7 +68,25 @@ if __name__ == "__main__":
         plt.savefig("reports/macd_panel.png", dpi=150)
         plt.close()
 
-        print("✅ 차트 저장 완료: reports/price_with_signals.png, reports/macd_panel.png")
+        plt.savefig("reports/macd_panel.png", dpi=150)
+        plt.close()
 
+        # -------- 복합전략 차트 --------
+        entry_idx = combo.index[combo["Entry"] == True]
+        exit_idx  = combo.index[combo["Exit"]  == True]
+
+        plt.figure()
+        plt.plot(df.index, df["Close"], label="Close")
+        plt.plot(df.index, df["SMA200"], label="SMA200")  # 200일선
+        plt.scatter(entry_idx, df.loc[entry_idx, "Close"], marker="^", color="green", label="Entry")  # 매수
+        plt.scatter(exit_idx,  df.loc[exit_idx,  "Close"], marker="v", color="red", label="Exit")    # 매도
+        plt.title("Price + SMA200 with MACD Entries/Exits")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig("reports/price_with_combo.png", dpi=150)
+        plt.close()
+
+        print("✅ 차트 저장 완료: reports/price_with_signals.png, reports/macd_panel.png, reports/price_with_combo.png")
+        
     except FileNotFoundError:
         print("⚠️ data/price.csv 파일이 없습니다. 먼저 CSV 데이터를 넣어주세요.")
