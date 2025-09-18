@@ -1,5 +1,5 @@
 # fetch_upbit.py
-# KRW-BTC 일봉 시세를 가져와 data/price.csv 로 저장
+# KRW-XRPgi 일봉 시세를 가져와 data/price.csv 로 저장
 # columns: Date,Open,High,Low,Close,Volume
 
 import pyupbit
@@ -7,7 +7,6 @@ import pandas as pd
 import os
 
 TICKER = "KRW-XRP"    # 필요하면 KRW-ETH 등으로 바꿔도 됨
-
 COUNT  = 200          # 최근 200일
 
 def main():
