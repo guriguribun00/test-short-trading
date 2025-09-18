@@ -15,6 +15,7 @@ data/*.csv
 reports/*.html
 reports/*.pdf
 reports/*.png
+reports/*.csv
 
 # VS Code
 .vscode/

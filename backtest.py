@@ -18,14 +18,19 @@ def calc_macd(df, short=12, long=26, signal=9):
     df["Hist"] = df["MACD"] - df["Signal"]
     return df
 
+def calc_sma(df, window=200):
+    df[f"SMA{window}"] = df["Close"].rolling(window=window, min_periods=1).mean()
+    return df
+
 if __name__ == "__main__":
     try:
-        from strategies.macd_strategy import macd_cross_signals
+        from strategies.macd_strategy import macd_cross_signals, macd_with_ma_filter
         import os
         import matplotlib.pyplot as plt
 
         df = load_price_data()
         df = calc_macd(df)
+        df = calc_sma(df, 200)
 
         # 1) 크로스 신호 추출
         signals = macd_cross_signals(df)
