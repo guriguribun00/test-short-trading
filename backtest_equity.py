@@ -1,5 +1,5 @@
 # backtest_equity.py
-# MACD+SMA200 Entry/Exit 신호로 가상 매매 → 수수료/슬리피지 반영 → 잔고곡선
+# MACD+SMA200 Entry/Exit + 수수료/슬리피지 + 퍼센트 손절 / 익절 → 잔고곡선
 
 import os
 import matplotlib.pyplot as plt
@@ -15,43 +15,76 @@ INIT_CASH   = 1_000_000     # 초기 자본(원)
 FEE  = 0.0005   # 업비트 수수료 0.05% (매수/매도 각각)
 SLIP = 0.0005   # 슬리피지 0.05% (원하면 0으로)
 
+# ==== 퍼센트 손절/익절 (원하는 대로 바꾸세요) ====
+STOP_PCT = 0.03   # -3% 손절
+TAKE_PCT = 0.06   # +6% 익절
+
 def run_backtest():
     if not os.path.exists(DATA_PATH):
         raise FileNotFoundError(f"{DATA_PATH} 없음")
 
     # 1) 데이터 & 지표
-    df = load_price_data(DATA_PATH)
+    df = load_price_data(DATA_PATH)   # columns: Date, Open, High, Low, Close, Volume
     df = calc_macd(df)
     df = calc_sma(df, 200)
 
-    # 2) 신호
-    sig = macd_with_ma_filter(df)
+    # 2) 신호 (MACD + SMA200 필터)
+    sig = macd_with_ma_filter(df)     # index 가 날짜로 동일해야 함
 
     # 3) 포지션/잔고
     cash = INIT_CASH
     coin = 0.0
     position = None
+    entry_price = None
 
     equity_rows = []
-    for dt, row in sig.iterrows():
-        px = float(row["Close"])
 
-        # 매수
+    for dt, row in sig.iterrows():
+        px_close = float(row["Close"])
+        px_high  = float(df.loc[dt, "High"])
+        px_low   = float(df.loc[dt, "Low"])
+
+        # === 매수 ===
         if row["Entry"] and position is None:
             buy_price = px * (1 + FEE + SLIP)    # 체결가(비용 반영)
-            coin = cash / buy_price             # 살 수 있는 수량
+            coin = cash / buy_price              # 살 수 있는 수량
             cash = 0.0
             position = "LONG"
+            entry_price = buy_price
+        # === 보유 중일 때 손절/일절/신호 청산 체크 ===
+        elif position == "LONG":
+            stop_lvl = entry_price * (1 - STOP_PCT)
+            takc_lvl = entry_price * (1 + TAKE_PCT)
 
-        # 매도
-        elif row["Exit"] and position == "LONG":
-            sell_price = px * (1 - FEE - SLIP)  # 체결가(비용 반영)
-            cash = coin * sell_price
-            coin = 0.0
-            position = None
+            exited = False
 
+            # 1) 보수적으로: 같은 봉에서 둘 다 맞으면 '손절' 우선
+            if px_low <= stop_lvl:
+                sell_price = stop_lvl * (1 - FEE - SLIP)   # 손절 체결가에 비용 반영
+                cash = coin * sell_price
+                coin = 0.0
+                position = None
+                entry_price = None
+                exited  = True
+
+            elif px_high >= take_lvl:
+                sell_price = take_lvl * (1 - FEE - SLIP)   # 익절 체결가에 비용 반영
+                cash = coin * sell_price
+                coin = 0.0
+                position = None
+                entry_price = None
+                exited = True
+
+            # 2) 퍼센트 조건이 걸리지 않았을 때만 MACD Exit 신호로 청산
+            if (not extied) and row["Exit"]:
+                sell_price = px_close * (1 - FEE - SLIP)
+                cash = coin * sell_price
+                coin = 0.0
+                position = None
+                entry_price = None
+        
         # 평가자산
-        equity = cash + coin * px
+        equity = cash + coin * px_close
         equity_rows.append({"Date": dt, "Equity": equity})
 
     equity_df = pd.DataFrame(equity_rows).set_index("Date")
