@@ -16,7 +16,9 @@ reports/*.html
 reports/*.pdf
 reports/*.png
 reports/*.csv
-reports/last_signal.txt
+reports/*.txt
+reports/logs/
+reports/*.pdf
 
 # VS Code
 .vscode/
