@@ -14,7 +14,7 @@ def calc_macd(df, short=12, long=26, signal=9):
 
 # ===== 시그널 체크 함수 =====
 def check_signal(interval="minute60"):
-    df = pyupbit.get_ohlcv("XRP", interval=interval, count=200)
+    df = pyupbit.get_ohlcv("KRW-XRP", interval=interval, count=200)
 
     macd, signal_line = calc_macd(df)
     hist = macd - signal_line
